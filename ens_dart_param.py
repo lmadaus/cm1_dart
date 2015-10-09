@@ -17,19 +17,15 @@ exp_name='kdvn_ensemble'                # Name of the experiment
 #
 #**************************************************************
 
-flag_compute_tendency = False      # True to compute the altimeter tendencies for each out file
-flag_make_interpol    = False      # True to perform the interpolation
-flag_keep_raw         = True       # True to keep original files
 flag_compress_diag    = False       # True to gzip the diag files in longsave
 flag_keep_outs        = True      # True to preserve output files in each member's directory
-flag_precip_diag      = False      # True te extract precip diag files (NOT ENABLED)
 flag_keep_diags       = False       # True to keep the Prior and Posterior Diag files
 
 flag_obs_diag         = False      # perform observation diagnostics
-flag_inf_diag         = False      # perform inflation diagnostics
 
 flag_direct_netcdf_io = True       # Use experimental DART IO to read/write
                                    # directly from/to restart netcdf files
+                                   # THIS MUST BE TRUE FOR CM1_DART!
 
 #**************************************************************
 #
@@ -76,7 +72,7 @@ mpi_numprocs_flag   = '-np %d' % mpi_numprocs_member      # Flag for numprocs in
                                                           # blank for bluefire
 
 # Extra parameters for running on Bluefire
-NCAR_GAU_ACCOUNT     = 'UWAS0031'                   # Account to charge to at NCAR
+NCAR_GAU_ACCOUNT     = 'XXXXXX'                   # Account to charge to at NCAR
 ADVANCE_TIME_FILTER  = '0:45'                # Estimate of time for filter to run
 ADVANCE_TIME_MEMBER  = '0:20'                # Estimate of time for a single member to run 
 ADVANCE_QUEUE_FILTER = queue_filter          # Name of NCAR queue to use for filter 
