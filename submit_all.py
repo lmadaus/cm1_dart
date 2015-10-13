@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 import os, sys
-from ens_dart_param import Ne,cycle_len,dir_members,dir_utils,dir_longsave,queue_members,mpi_numprocs_member
+from ens_dart_param import Ne,cycle_len,dir_members,dir_utils,dir_longsave,queue_members,mpi_numprocs_member,queue_sub_governor
 from datetime import datetime, timedelta
+from check_ensemble_status import chkstat
 from argparse import ArgumentParser
+import time
 
 parser = ArgumentParser()
 
@@ -74,6 +76,7 @@ os.system('rm -f *.log')
 os.system('rm -f *.err')
 
 # Loop through each member
+waiting = []
 #for mem in range(1,int(Ne)+1):
 #for mem in [1]:
 #for mem in [6,16,27,28,39]:
@@ -96,3 +99,18 @@ for mem in memlist:
                % (mpi_numprocs_member,queue_members,dir_members,mem,dir_members,mem,dir_members,mem,\
                  dir_members,mem,mem))
     print "Done."
+    #done,start,notstart,err = chkstat(enddate)
+    #waiting = start+notstart
+    if queue_sub_governor is not None:
+        assert isinstance(queue_sub_governor, int)
+        if mem < queue_sub_governor:
+            #print "CONTINUING"
+            continue
+        else:
+            #print "NOT CONTINUING"
+            done,start,notstart,err = chkstat(endtime)
+            waiting = start+notstart
+            while len(waiting) > queue_sub_governor:
+                time.sleep(5)
+                done,start,notstart,err = chkstat(endtime)
+                waiting = start+notstart

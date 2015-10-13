@@ -8,7 +8,7 @@ from ens_dart_param import *
 resub = False 
 silent = False 
 
-(opts, args) = getopt.getopt(sys.argv[1:],'d:s')
+(opts, args) = getopt.getopt(sys.argv[1:],'d:s:m')
 # Command line options to input the
 # date we are checking and to run silently
 # (for unsupervised runs)
@@ -82,8 +82,7 @@ def chkstat(chkdate):
                 jobid = int(linesp[0])
                 queue_members[memnum] = (runstat, jobid)
 
-
-    # Loop through all ensemble members
+    #print(queue_members)
     for mem in range(1,Ne+1):
         # Loop through all domainis
         #for dom in range(max_dom+1)[1:]:
@@ -101,29 +100,31 @@ def chkstat(chkdate):
             # If we're here, then the member is not in the queue.  Check for wrfout
             rstfile = '{:s}/m{:d}/cm1out_rst_000001.nc'.format(dir_members,mem)
             if not os.path.exists(rstfile) and mem not in memserror:
-                print("Restart file not found")
+                if __name__ == '__main__':
+                    print("Restart file not found")
                 # Member is not in the queue, so there must be a failure.
                 error_found = check_logfile(mem)
                 if not error_found:
                     # Not sure why this member is missing, but add it to error anyway
-                    print("Member {:d} Model crashed.  Unknown reason.".format(mem))
-                    memserror.append(mem)
-
-            # If we're here, then restart file exists. Now the true test...is it at the
-            # right time?
-            with Dataset(rstfile, 'r') as rstnc:
-                rst_time = int(rstnc.variables['time'][0])
-                # If the restart time doesnt match and we are not in the queue or running,
-                # the member most have crashed
-                if (rst_time != chktime):
-                    # Because we're in this part of the if statement, we know
-                    # the member is not running or waiting
-                    print("Restart time:", rst_time, "Does not match check time:", chktime)
-                    error_found = check_logfile(mem)
-                    if not error_found:
-                        # Not sure why this member is missing, but add it to error anyway
+                    if __name__ == '__main__':
                         print("Member {:d} Model crashed.  Unknown reason.".format(mem))
-                        memserror.append(mem)
+                    memserror.append(mem)
+            else:
+                # If we're here, then restart file exists. Now the true test...is it at the
+                # right time?
+                with Dataset(rstfile, 'r') as rstnc:
+                    rst_time = int(rstnc.variables['time'][0])
+                    # If the restart time doesnt match and we are not in the queue or running,
+                    # the member most have crashed
+                    if (rst_time != chktime):
+                        # Because we're in this part of the if statement, we know
+                        # the member is not running or waiting
+                        print("Restart time:", rst_time, "Does not match check time:", chktime)
+                        error_found = check_logfile(mem)
+                        if not error_found:
+                            # Not sure why this member is missing, but add it to error anyway
+                            print("Member {:d} Model crashed.  Unknown reason.".format(mem))
+                            memserror.append(mem)
 
             # Final check if we're not doing the netcdf IO
             if not os.path.exists('{:s}/assimilation/filter_ic_old.{:04d}'.format(dir_dom,mem))\
@@ -239,144 +240,145 @@ def resubmit(merror):
       #              % (mpi_numprocs_member, queue_members, dir_member, mem, mem))
       os.chdir(dir_dom)
 
-if silent:
-    # SILENT CONTROL MODE
-    import time
-    # Relics from the old script--make sure we're starting from scratch
-    if os.path.exists('ensemble_done_{:d}'.format(indate)):
-      os.system('rm -rf ensemble_done_{:d}'.format(indate))
-    if os.path.exists('master_ens_log'):
-      os.system('rm -rf master_ens_log')
+if __name__ == '__main__':
+    if silent:
+        # SILENT CONTROL MODE
+        import time
+        # Relics from the old script--make sure we're starting from scratch
+        if os.path.exists('ensemble_done_{:d}'.format(indate)):
+          os.system('rm -rf ensemble_done_{:d}'.format(indate))
+        if os.path.exists('master_ens_log'):
+          os.system('rm -rf master_ens_log')
 
-    # Initialize some variables and the log file
-    memsdone = 0
-    logfile = open('master_ens_log','w')
-    resub = 0 
-    timecheck = 0
-    while memsdone < Ne:
-        # Check every ten seconds to see if all members are done
-        # if resub is True (1), then resubmit members as they crash
-        time.sleep(10)
-        # Master control lock -- check to see if this file exists                              
-        # If it doesn't exist, exit the program                                                
-        if not os.path.exists('{:s}/AUTO_RUN_IN_PROGRESS'.format(dir_dom)):                        
-            print("File 'AUTO_RUN_IN_PROGRESS' is not present in main dir. Exiting.")         
-            exit(0) 
+        # Initialize some variables and the log file
+        memsdone = 0
+        logfile = open('master_ens_log','w')
+        resub = 0 
+        timecheck = 0
+        while memsdone < Ne:
+            # Check every ten seconds to see if all members are done
+            # if resub is True (1), then resubmit members as they crash
+            time.sleep(10)
+            # Master control lock -- check to see if this file exists                              
+            # If it doesn't exist, exit the program                                                
+            if not os.path.exists('{:s}/AUTO_RUN_IN_PROGRESS'.format(dir_dom)):                        
+                print("File 'AUTO_RUN_IN_PROGRESS' is not present in main dir. Exiting.")         
+                exit(0) 
 
-        # Check the status for the date specified
+            # Check the status for the date specified
+            mdone, mnotdone, mnotstart, merror = chkstat(indate)
+            if len(merror)>0 and resub:
+                # If some members have crashed (more than zero members in merror), resubmit
+                # (if flag is set)
+                logfile.write("")
+                logfile.write("Resubmitting crashed members:", merror)
+                logfile.write("")
+                # Call the resubmit function
+                resubmit(merror)
+
+            if timecheck == 180:
+                # Periodically write to the log file
+                nowtm = datetime.datetime.now()
+                logfile.write("")
+                logfile.write("***  Status as of {:%m/%d  %I:%M:%S %p}  ***".format(nowtm)) 
+                logfile.write("-----------------------------------------")
+                logfile.write("   {:02d} Members done: ".format(len(mdone)))
+                logfile.write("   {:02d} Members in progress: ".format(len(mnotdone)))
+                logfile.write("   {:02d} Members not started: ".format(len(mnotstart)))
+                logfile.write("   {:02d} Members crashed: ".format(len(merror)))
+                logfile.write("")
+                timecheck = 0
+
+            timecheck = timecheck + 1
+            # Find how many members are done now for the next run through
+            # the while loop
+            memsdone = len(mdone)
+
+        # Once the silent mode while loop exits, check again to be sure
+        # all ensemble members are done
         mdone, mnotdone, mnotstart, merror = chkstat(indate)
-        if len(merror)>0 and resub:
-            # If some members have crashed (more than zero members in merror), resubmit
-            # (if flag is set)
-            logfile.write("")
-            logfile.write("Resubmitting crashed members:", merror)
-            logfile.write("")
-            # Call the resubmit function
-            resubmit(merror)
-
-        if timecheck == 180:
-            # Periodically write to the log file
+        if len(mdone) == Ne:
+            # If all files are done...
             nowtm = datetime.datetime.now()
             logfile.write("")
             logfile.write("***  Status as of {:%m/%d  %I:%M:%S %p}  ***".format(nowtm)) 
-            logfile.write("-----------------------------------------")
-            logfile.write("   {:02d} Members done: ".format(len(mdone)))
-            logfile.write("   {:02d} Members in progress: ".format(len(mnotdone)))
-            logfile.write("   {:02d} Members not started: ".format(len(mnotstart)))
-            logfile.write("   {:02d} Members crashed: ".format(len(merror)))
-            logfile.write("")
-            timecheck = 0
-
-        timecheck = timecheck + 1
-        # Find how many members are done now for the next run through
-        # the while loop
-        memsdone = len(mdone)
-
-    # Once the silent mode while loop exits, check again to be sure
-    # all ensemble members are done
-    mdone, mnotdone, mnotstart, merror = chkstat(indate)
-    if len(mdone) == Ne:
-        # If all files are done...
-        nowtm = datetime.datetime.now()
-        logfile.write("")
-        logfile.write("***  Status as of {:%m/%d  %I:%M:%S %p}  ***".format(nowtm)) 
-        logfile.write("******* ALL FILES PRESENT *******")
-        print("******* ALL FILES PRESENT *******")
-        # Now check for any NANed members
-        # Using the check_complete_cm1 function
-        nanmems = check_complete_cm1(indate) 
-        if len(nanmems) > 0:
-            #resub = raw_input("Resubmit NAN members (0 or 1)?  ")
-            #if int(resub) == 1:
-            # Loop through the members, copy in old restart file and resubmit
-            #for mem in nanmems:
-            #    os.system('cp {:s}/m{:d}/prev_cm1out_rst_000001.nc {:s}/m{:d}/cm1out_rst_000001.nc'.format(dir_members,mem,dir_member,mem))
-            logfile.write("Resubmitting NANed members:", nanmems)
-            resubmit(nanmems)
-            # Wait for the nan-ed members to finish
-            # LEM (TODO) NEED CODE HERE FOR MONITORING RESTART
-            os.system('touch ensemble_done_{:d}'.format(int(indate/60)))
-            logfile.close()
-            exit(0)
-
-        else:
-            # If all is good, we are done here
-            os.system('touch ensemble_done_{:d}'.format(int(indate/60)))
-            logfile.close()
-            exit(0)
-
-    else:
-        # We only go here if the while loop somehow exited but
-        # not all ensemble members were actually done.
-        nowtm = datetime.datetime.now()
-        logfile.write("")
-        logfile.write("***  Status as of {:%m/%d  %I:%M:%S %p}  ***".format(nowtm)) 
-        logfile.write("Problem occurred--not all files present.  Ending.")
-        os.system('touch ensemble_error_{:d}'.format(indate/60))
-        exit(1)
- 
-
-else:
-    # INTERACTIVE MODE
-    # This just displays a text output of the current
-    # Status of the ensemble 
-    mdone, mnotdone, mnotstart, merror = chkstat(indate)
-    nowtm = datetime.datetime.now()
-    print("")
-    print("***  Status as of {:%m/%d  %I:%M:%S %p}  ***".format(nowtm))
-    print("-----------------------------------------")
-    print("   {:02d} Members done: ".format(len(mdone)), mdone)
-    print("   {:02d} Members in progress: ".format(len(mnotdone)), mnotdone)
-    print("   {:02d} Members not started: ".format(len(mnotstart)), mnotstart)
-    print("   {:02d} Members crashed: ".format(len(merror)), merror)
-    print("")
-
-    if len(mdone) >= int(Ne):
-        # If all members happen to be done, check for NAN-ed members
-        print("******* ALL FILES PRESENT *******")
-        print("")
-        # Now check for any NANed members
-        nanmems = check_complete_cm1(indate) 
-        print(nanmems)
-        if len(nanmems) > 0:
-            resub = raw_input("Resubmit NAN members (0 or 1)?  ")
-            if int(resub) == 1:
-                # Loop through the members, copy in the old restart file and resubmit
+            logfile.write("******* ALL FILES PRESENT *******")
+            print("******* ALL FILES PRESENT *******")
+            # Now check for any NANed members
+            # Using the check_complete_cm1 function
+            nanmems = check_complete_cm1(indate) 
+            if len(nanmems) > 0:
+                #resub = raw_input("Resubmit NAN members (0 or 1)?  ")
+                #if int(resub) == 1:
+                # Loop through the members, copy in old restart file and resubmit
                 #for mem in nanmems:
                 #    os.system('cp {:s}/m{:d}/prev_cm1out_rst_000001.nc {:s}/m{:d}/cm1out_rst_000001.nc'.format(dir_members,mem,dir_member,mem))
+                logfile.write("Resubmitting NANed members:", nanmems)
                 resubmit(nanmems)
-            else:
-                pass
-    if len(merror) > 0:
-        # If there are any crashed members, prompt to resubmit
-        resub = raw_input("Resubmit crashed members (0 or 1)?  ")
-    else:
-        pass
+                # Wait for the nan-ed members to finish
+                # LEM (TODO) NEED CODE HERE FOR MONITORING RESTART
+                os.system('touch ensemble_done_{:d}'.format(int(indate/60)))
+                logfile.close()
+                exit(0)
 
-    if int(resub) == 1:
-        # Loop through all crashed members and resubmit
-        # If requesetd
-        resubmit(merror)
+            else:
+                # If all is good, we are done here
+                os.system('touch ensemble_done_{:d}'.format(int(indate/60)))
+                logfile.close()
+                exit(0)
+
+        else:
+            # We only go here if the while loop somehow exited but
+            # not all ensemble members were actually done.
+            nowtm = datetime.datetime.now()
+            logfile.write("")
+            logfile.write("***  Status as of {:%m/%d  %I:%M:%S %p}  ***".format(nowtm)) 
+            logfile.write("Problem occurred--not all files present.  Ending.")
+            os.system('touch ensemble_error_{:d}'.format(indate/60))
+            exit(1)
+     
+
+    else:
+        # INTERACTIVE MODE
+        # This just displays a text output of the current
+        # Status of the ensemble 
+        mdone, mnotdone, mnotstart, merror = chkstat(indate)
+        nowtm = datetime.datetime.now()
+        print("")
+        print("***  Status as of {:%m/%d  %I:%M:%S %p}  ***".format(nowtm))
+        print("-----------------------------------------")
+        print("   {:02d} Members done: ".format(len(mdone)), mdone)
+        print("   {:02d} Members in progress: ".format(len(mnotdone)), mnotdone)
+        print("   {:02d} Members not started: ".format(len(mnotstart)), mnotstart)
+        print("   {:02d} Members crashed: ".format(len(merror)), merror)
+        print("")
+
+        if len(mdone) >= int(Ne):
+            # If all members happen to be done, check for NAN-ed members
+            print("******* ALL FILES PRESENT *******")
+            print("")
+            # Now check for any NANed members
+            nanmems = check_complete_cm1(indate) 
+            print(nanmems)
+            if len(nanmems) > 0:
+                resub = raw_input("Resubmit NAN members (0 or 1)?  ")
+                if int(resub) == 1:
+                    # Loop through the members, copy in the old restart file and resubmit
+                    #for mem in nanmems:
+                    #    os.system('cp {:s}/m{:d}/prev_cm1out_rst_000001.nc {:s}/m{:d}/cm1out_rst_000001.nc'.format(dir_members,mem,dir_member,mem))
+                    resubmit(nanmems)
+                else:
+                    pass
+        if len(merror) > 0:
+            # If there are any crashed members, prompt to resubmit
+            resub = raw_input("Resubmit crashed members (0 or 1)?  ")
+        else:
+            pass
+
+        if int(resub) == 1:
+            # Loop through all crashed members and resubmit
+            # If requesetd
+            resubmit(merror)
 
 
 

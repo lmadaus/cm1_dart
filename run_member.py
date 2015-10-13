@@ -4,7 +4,7 @@ import os, sys
 from datetime import datetime, timedelta
 import re
 from netCDF4 import Dataset
-sys.path.append('/home/disk/pvort/nobackup/lmadaus/cm1/DOMAINS/kdvn_ensemble')
+sys.path.append('/home/disk/pvort/nobackup/lmadaus/cm1/DOMAINS/kdnr_ensemble')
 from ens_dart_param import *
 from namelist_utils import read_namelist, write_namelist, write_dart_namelist
 
@@ -330,6 +330,7 @@ def post_model_cleanup(mem,start,end,fcst_end):
     # Now run through a litany of possible post-processing things to be done
 
     # Check if we're computing tendency
+    """
     if flag_compute_tendency:
         print "Computing altimeter tendency"
         if not os.path.exists('wrf_tendency'):
@@ -351,7 +352,7 @@ def post_model_cleanup(mem,start,end,fcst_end):
             if dn > 1:
                 os.system('rm wrfinput_d01')
                 os.system('mv wrfinput_d01_orig wrfinput_d01')
-
+    """
 
     # Actual file turnaround goes here
     print "Copying over files for restart."

@@ -8,7 +8,7 @@ import os
 #
 #*******************************************************************************
 
-exp_name='kdvn_ensemble'                # Name of the experiment
+exp_name='kdnr_ensemble'                # Name of the experiment
  
 #**************************************************************
 #
@@ -47,8 +47,8 @@ dir_members    = dir_dom + '/mems'                   # members directory
 dir_assim      = dir_dom + '/assimilation'           # Directory where DART will be run
 
 # Directories where CM1 and DART are found
-dir_src_model      = dir + '/r18/cm1r18/run'        # Where the model executable is located
-dir_src_dart      = dir + '/DART_CM1/models/cm1/work'   # Where DART executables are located
+dir_src_model      = dir + '/r18/lab_cm1r18/run'        # Where the model executable is located
+dir_src_dart      = dir + '/LAB_DART_CM1/models/cm1/work'   # Where DART executables are located
 
 #**************************************************************
 #
@@ -62,14 +62,21 @@ dir_src_dart      = dir + '/DART_CM1/models/cm1/work'   # Where DART executables
 
 cluster_name        = 'enkf'                   # name of cluster nodes
 mpi_run_command     = 'mpirun' # Command to run MPI
-queue_members       = 'fast'                    # Queue to run members in
-queue_filter        = 'fast'                    # Queue to run filter in          
+queue_members       = 'MPI'                    # Queue to run members in
+queue_filter        = 'MPI'                    # Queue to run filter in          
 mpi_numprocs_member = 16                       # Number of processors for member
 mpi_numprocs_filter = 64                       # Number of processors for filter
 #mpi_numprocs_flag   = ''
 mpi_numprocs_flag   = '-np %d' % mpi_numprocs_member      # Flag for numprocs in code
                                                           # for member.  Bluefire does
                                                           # blank for bluefire
+queue_sub_governor = 5                         # Maximum number of jobs to
+                                               # have submitted to the queue at
+                                               # one time.  If none, will submit
+                                               # all members at once, otherwise
+                                               # will wait on submission until
+                                               # previous members finish
+                                              
 
 # Extra parameters for running on Bluefire
 NCAR_GAU_ACCOUNT     = 'XXXXXX'                   # Account to charge to at NCAR
