@@ -172,8 +172,14 @@ def make_namelist_and_inflate(datein, prevdate):
     start_date = datetime(cm1date['year'], cm1date['month'], cm1date['day'], cm1date['hour'],\
                           cm1date['minute'], cm1date['second'])
    
-    # Make sure num members is write
+    # Make sure num members is right
     nmld['filter_nml']['ens_size'] = Ne
+
+    # Check to see if we need to copy in the sampling error correction
+    if nmld['assim_tools_nml']['sampling_error_correction']:
+        os.system('cp -f {:s}/../../../system_simulation/final_full_precomputed_tables/final_full.{:d} {:s}/final_full.{:d}'.format(dir_src_dart, Ne, dir_assim, Ne))
+
+    # Write the namelist
     write_dart_namelist(nmld, date=start_date + timedelta(seconds=datein))
     os.system('cp input.nml {:s}/input.nml'.format(dir_assim))
 
