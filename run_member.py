@@ -287,11 +287,11 @@ def run_cm1(mem):
 
     # All we do here is run CM1
     #mp_numprocs_member = 16 
-    if not os.path.exists('cm1.exe'):
-        os.system('ln -sf {:s}/cm1.exe'.format(dir_src_model))
+    #if not os.path.exists('cm1.exe'):
+    #    os.system('ln -sf {:s}/cm1.exe'.format(dir_src_model))
     #os.system('mpirun -np %d wrf.exe' % mp_numprocs_member)
     if mpi_run_command is not None:
-        os.system('%s %s ./cm1.exe' % (mpi_run_command,mpi_numprocs_flag))
+        os.system('{:s} {:s} {:s}/cm1.exe'.format(mpi_run_command,mpi_numprocs_flag, dir_src_model))
     else:
         os.system('./cm1.exe')
 
