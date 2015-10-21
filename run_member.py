@@ -362,6 +362,8 @@ def post_model_cleanup(mem,start,end,fcst_end):
         # THIS IS WHERE THE ACTUAL SWITCHOVER GOES
         print("Copying over restart:", restart_name)
         os.system('cp {:s} cm1out_rst_000001.nc'.format(restart_name))
+    else:
+        os.system('cp cm1out_rst_000001.nc RESTART_m{:d}_cm1out_rst_000001.nc'.format(mem))
 
     # Now remove all other restart files
     rst_file = [f for f in os.listdir('.') if 'cm1out_rst' in f and not f.endswith('000001.nc')]
