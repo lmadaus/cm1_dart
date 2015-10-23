@@ -119,12 +119,13 @@ def chkstat(chkdate):
                     if (rst_time != chktime):
                         # Because we're in this part of the if statement, we know
                         # the member is not running or waiting
-                        print("Restart time:", rst_time, "Does not match check time:", chktime)
-                        error_found = check_logfile(mem)
-                        if not error_found:
-                            # Not sure why this member is missing, but add it to error anyway
-                            print("Member {:d} Model crashed.  Unknown reason.".format(mem))
-                            memserror.append(mem)
+                        if __name__ == '__main__':
+                            print("Restart time:", rst_time, "Does not match check time:", chktime)
+                            error_found = check_logfile(mem)
+                            if not error_found:
+                                # Not sure why this member is missing, but add it to error anyway
+                                print("Member {:d} Model crashed.  Unknown reason.".format(mem))
+                                memserror.append(mem)
 
             # Final check if we're not doing the netcdf IO
             if not os.path.exists('{:s}/assimilation/filter_ic_old.{:04d}'.format(dir_dom,mem))\
