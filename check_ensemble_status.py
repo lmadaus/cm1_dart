@@ -8,7 +8,7 @@ from ens_dart_param import *
 resub = False 
 silent = False 
 
-(opts, args) = getopt.getopt(sys.argv[1:],'d:s:m')
+(opts, args) = getopt.getopt(sys.argv[1:],'d:m:s')
 # Command line options to input the
 # date we are checking and to run silently
 # (for unsupervised runs)
@@ -116,7 +116,7 @@ def chkstat(chkdate):
                     rst_time = int(rstnc.variables['time'][0])
                     # If the restart time doesnt match and we are not in the queue or running,
                     # the member most have crashed
-                    if (rst_time != chktime):
+                    if (rst_time != chktime) and __name__ == '__main__':
                         # Because we're in this part of the if statement, we know
                         # the member is not running or waiting
                         print("Restart time:", rst_time, "Does not match check time:", chktime)

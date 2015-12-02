@@ -40,7 +40,7 @@ def main():
     if assim_start < 0:
         assim_times = []
     else:
-        assim_times = all_timelist[assim_start:N_assim+1:assim_interval]
+        assim_times = all_timelist[assim_start::assim_interval]
 
     print("Assim times correct?", assim_times)
     #raw_input()

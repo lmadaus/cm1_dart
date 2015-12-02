@@ -15,20 +15,28 @@ to extract an observation sequence at the specified time.
 GENERATE_IDEAL_OBS = True
 
 
-error_var = {'LAND_SFC_TEMPERATURE' : 1.0,
-             'LAND_SFC_U_WIND_COMPONENT' : 1.0,
-             'LAND_SFC_V_WIND_COMPONENT' : 1.0,
-             'LAND_SFC_PRESSURE' : 100.0,
-             'LAND_SFC_SPECIFIC_HUMIDITY' : 0.001}
+error_var = {'TEMPERATURE_2M' : 1.0,
+             'U_WIND_10M' : 1.0,
+             'V_WIND_10M' : 1.0,
+             'SURFACE_PRESSURE' : 100.0,
+             'SPECIFIC_HUMIDITY_2M' : 0.001}
+heights = {'TEMPERATURE_2M' : 0.0,
+           'U_WIND_10M' : 10.0,
+           'V_WIND_10M' : 10.0,
+           'SURFACE_PRESSURE' : 0.0,
+           'SPECIFIC_HUMIDITY_2M' : 2.0,
+          }
 
+curdir = os.getcwd() 
 def main():
 
     #build_obs_structure(0)
 
     if GENERATE_IDEAL_OBS:
-        generate_ideal_obs(intime=120)
+        for t in range(60,660,60):
+            generate_ideal_obs(intime=t)
 
-def build_obs_structure(intime, rst_file, gridspace=16):
+def build_obs_structure(intime, rst_file, gridspace=4):
     """ Function to specify what variables we want and how dense they should be """
     #from make_namelist_dart import set_namelist_sectors, write_namelist
     #from write_cm1_namelist import set_namelist_defaults
@@ -48,7 +56,9 @@ def build_obs_structure(intime, rst_file, gridspace=16):
     use_obs = dartnml['obs_kind_nml']['assimilate_these_obs_types']
     # I'm just testing this for now
     #use_obs = use_obs[0:2]
-    use_obs = ['LAND_SFC_PRESSURE']
+    #use_obs = ['LAND_SFC_U_WIND_COMPONENT', 'LAND_SFC_V_WIND_COMPONENT', 'LAND_SFC_TEMPERATURE',
+    #           'LAND_SFC_SPECIFIC_HUMIDITY']
+    use_obs = ['TEMPERATURE_2M','SURFACE_PRESSURE','SPECIFIC_HUMIDITY_2M','V_WIND_10M','U_WIND_10M']
     print(use_obs)
     # Put time as datetime
     intime = startdate + timedelta(seconds=intime)
@@ -108,7 +118,7 @@ def build_obs_structure(intime, rst_file, gridspace=16):
                     infile.write('0\n') # Specify location
                     infile.write(str(x)+'\n') # X coordinate
                     infile.write(str(y)+'\n') # Y coordinate
-                    infile.write('0\n') # Z coordinate
+                    infile.write(str(heights[obtype]) + '\n') # Z coordinate
                     infile.write('{:d} {:d} {:d} {:d} {:d} {:d}\n'.format(\
                         intime.year, intime.month,\
                         intime.day, intime.hour,\
@@ -167,7 +177,6 @@ def generate_ideal_obs(intime):
     
     
     
-    
     # Go into the obs directory
     os.chdir(dir_obs)
 
@@ -200,7 +209,7 @@ def generate_ideal_obs(intime):
         print("Success!  Made obs_seq.out file.")
         os.system('mv obs_seq.out {:d}_obs_seq.prior'.format(intime))
 
-
+    os.chdir(curdir)
 
 class ProceduralError(Exception):
     """

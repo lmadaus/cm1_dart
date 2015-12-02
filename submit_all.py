@@ -77,7 +77,7 @@ os.system('rm -f *.err')
 
 # Loop through each member
 waiting = []
-#for mem in range(1,int(Ne)+1):
+#for mem in range(2,int(Ne)+1):
 #for mem in [1]:
 #for mem in [6,16,27,28,39]:
 for mem in memlist:
